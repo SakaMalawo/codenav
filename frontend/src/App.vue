@@ -13,6 +13,8 @@
           <router-view />
         </main>
       </div>
+      <!-- Bot persistant, suit le darkmode -->
+      <Citra :dark="darkMode" />
     </template>
 
     <!-- Affichage uniquement de Home.vue -->
@@ -25,11 +27,13 @@
 <script>
 import MainNavbar from "./components/MainNavbar.vue";
 import MainSidebar from "./components/MainSidebar.vue";
+import Citra from "./components/Citra.vue";
 
 export default {
   components: {
     MainNavbar,
     MainSidebar,
+    Citra,
   },
   data() {
     return {
