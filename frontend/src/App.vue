@@ -1,265 +1,128 @@
 <template>
-  <div class="Title">
-    <h1 class="title_desc">Pizza Factory &copy;</h1>
-    <p class="intro_desc">
-      Pizza au feu de bois, à la spécialité Italienne, de Façon Malagasy
-    </p>
-  </div>
-  <br /><br />
-
-  <div class="container">
-    <!-- Colonne 1 : Image -->
-    <div class="pizza-image">
-      <img :src="pizzaImage" alt="Delicious Pizza" />
-    </div>
-
-    <!-- Colonne 2 : Détails de la pizza -->
-    <div class="pizza-details">
-      <h1 class="pizza-name">{{ pizzaName }} &circledast;</h1>
-      <h2 class="price">€{{ unitPrice }}</h2>
-      <p class="ingredients">Ingredients: {{ ingredients.join(", ") }}</p>
-      <div class="buttons">
-        <button @click="addOrder" id="purchase-button">Ajouter</button>
-        <button @click="removeOrder" id="cancel-button">X</button>
+  <div
+    class="min-h-screen flex flex-col dark:bg-gray-900 dark:text-white bg-white text-gray-900 transition-colors duration-300"
+  >
+    <!-- Navbar et Sidebar affichés sauf sur la page Home -->
+    <template v-if="$route.path !== '/'">
+      <MainNavbar @toggle-dark-mode="toggleDarkMode" :darkMode="darkMode" />
+      <div class="flex flex-1 pt-16">
+        <MainSidebar :darkMode="darkMode" />
+        <main
+          class="flex-1 ml-0 md:ml-64 px-6 pb-6 transition-all duration-300 mt-4"
+        >
+          <router-view />
+        </main>
       </div>
-    </div>
+    </template>
 
-    <!-- Colonne 3 : Table d'achat -->
-    <div class="shopping-table">
-      <table>
-        <thead>
-          <tr>
-            <th>Commandes</th>
-            <th>P.U</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ orderCount }}</td>
-            <td>€{{ unitPrice }}</td>
-          </tr>
-          <tr>
-            <td>
-              <input
-                type="text"
-                v-model="promoCode"
-                placeholder="Enter code"
-                class="promo-input"
-              />
-            </td>
-            <td>
-              <button
-                @click="applyPromoCode"
-                :class="[
-                  'promo-button',
-                  { 'promo-success': promoApplied },
-                  { 'promo-Error': promoError },
-                ]"
-              >
-                Code Promo
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td>Total</td>
-            <td>
-              <div v-if="promoApplied">
-                <span class="original-price"
-                  >€{{ totalPriceWithoutPromo }}</span
-                >
-                <span class="discounted-price">€{{ totalPrice }}</span>
-              </div>
-              <div v-else>€{{ totalPrice }}</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-if="promoError" class="error-message">{{ promoError }}</p>
-      <p v-else class="success-message">{{ promoSuccess }}</p>
-    </div>
+    <!-- Affichage uniquement de Home.vue -->
+    <template v-else>
+      <router-view />
+    </template>
   </div>
 </template>
 
 <script>
+import MainNavbar from "./components/MainNavbar.vue";
+import MainSidebar from "./components/MainSidebar.vue";
+
 export default {
+  components: {
+    MainNavbar,
+    MainSidebar,
+  },
   data() {
     return {
-      pizzaImage: "/pizza.jpeg",
-      pizzaName: "Margherita",
-      unitPrice: 15,
-      ingredients: ["Tomato", "Mozzarella", "Bacon", "Olive"],
-      orderCount: 0,
-      promoCode: "",
-      promoApplied: false,
-      promoError: "",
-      promoSuccess: "",
-      discountPerOrder: 5, // Réduction 5€ par commande
+      darkMode: false,
     };
   },
-  computed: {
-    totalPriceWithoutPromo() {
-      return this.orderCount * this.unitPrice;
-    },
-    totalPrice() {
-      if (this.promoApplied) {
-        return (
-          this.totalPriceWithoutPromo - this.orderCount * this.discountPerOrder
-        );
+  methods: {
+    toggleDarkMode() {
+      this.darkMode = !this.darkMode;
+      if (this.darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
       }
-      return this.totalPriceWithoutPromo;
+      this.persistDarkMode();
+    },
+    persistDarkMode() {
+      this.$emit("dark-mode-changed", this.darkMode);
+    },
+    initializeDarkMode() {
+      if (
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        this.darkMode = true;
+        document.documentElement.classList.add("dark");
+      }
     },
   },
-  methods: {
-    addOrder() {
-      this.orderCount++;
-    },
-    removeOrder() {
-      if (this.orderCount > 0) {
-        this.orderCount--;
-      }
-    },
-    applyPromoCode() {
-      if (this.promoCode === "321") {
-        this.promoApplied = true;
-        this.promoSuccess = "Valide promo Code !";
-      } else {
-        this.promoApplied = false;
-        this.promoError = "Invalid promo code !";
-      }
-    },
+  created() {
+    this.initializeDarkMode();
+  },
+  mounted() {
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      mediaQuery.addEventListener("change", (e) => {
+        this.darkMode = e.matches;
+        if (e.matches) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      });
+    }
   },
 };
 </script>
 
-<style scoped>
-.title_desc,
-.intro_desc {
-  text-align: center;
+<style>
+/* Animation de la flamme */
+@keyframes flame {
+  0%,
+  100% {
+    color: #fbbf24; /* Jaune */
+    transform: scale(1) translateY(0);
+  }
+  25% {
+    color: #f59e0b; /* Orange */
+    transform: scale(1.05) translateY(-2px);
+  }
+  50% {
+    color: #d946ef; /* Violet fushia */
+    transform: scale(1.1) translateY(-4px);
+  }
+  75% {
+    color: #ec4899; /* Rose */
+    transform: scale(1.05) translateY(-2px);
+  }
 }
 
-.title_desc {
-  font-size: 45px;
-  background: linear-gradient(to right, red, rgb(197, 197, 1), orange, green);
-  color: transparent;
-  -webkit-background-clip: text;
-}
-.container {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 90%;
-  max-width: 1200px;
-  background-color: white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  overflow: hidden;
-  padding: 20px;
-  gap: 20px;
+.flame-animation {
+  animation: flame 2s infinite ease-in-out;
+  filter: drop-shadow(0 0 8px currentColor);
 }
 
-.pizza-image {
-  flex: 1;
-  text-align: center;
+.dark .flame-animation {
+  filter: drop-shadow(0 0 12px currentColor)
+    drop-shadow(0 0 20px rgba(251, 191, 36, 0.3));
 }
 
-.pizza-image img {
-  width: 350px;
-  height: 250px;
+.flame-container:hover .flame-animation {
+  animation-duration: 1s;
+  filter: drop-shadow(0 0 12px currentColor);
 }
 
-.pizza-details {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
+.dark .flame-container:hover .flame-animation {
+  filter: drop-shadow(0 0 16px currentColor)
+    drop-shadow(0 0 24px rgba(251, 191, 36, 0.4));
 }
 
-.buttons {
-  display: flex;
-  gap: 10px; /* Espacement entre les boutons */
-  margin-top: 20px;
-}
-
-#purchase-button {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-#cancel-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-#purchase-button:hover,
-#cancel-button:hover {
-  opacity: 0.9;
-}
-
-.promo-input {
-  width: 100%; /* La largeur de l'input s'adapte à la cellule */
-  padding: 5px;
-  box-sizing: border-box;
-}
-
-.promo-button {
-  width: 100%; /* La largeur du bouton s'adapte à la cellule */
-  padding: 10px;
-  color: black;
-  background-color: #f0f0f0; /* Couleur de fond par défaut */
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.promo-button.promo-Error {
-  background-color: red;
-  color: white;
-}
-
-.promo-button.promo-success {
-  background-color: #28a745; /* Couleur verte si le code promo est correct */
-  color: white;
-}
-
-.promo-button:hover {
-  opacity: 0.9;
-}
-
-.original-price {
-  text-decoration: line-through;
-  color: red;
-  margin-right: 10px;
-  opacity: 0.4;
-}
-
-.discounted-price {
-  color: green;
-  font-weight: bold;
-}
-
-.error-message {
-  color: red;
-  font-size: 0.9rem;
-  margin-top: 10px;
-}
-
-.success-message {
-  color: green;
-  font-size: 0.9rem;
-  margin-top: 10px;
+/* Transition globale */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease;
 }
 </style>
