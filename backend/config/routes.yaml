@@ -1,0 +1,10 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+api_data:
+    path: /api/data
+    controller: App\Controller\ApiController::getData
+    methods: GET
